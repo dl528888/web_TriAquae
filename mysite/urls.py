@@ -1,6 +1,7 @@
 from django.conf.urls import patterns, include, url
 from mysite.view import current_datetime,hours_ahead
 from triWeb import views,contact,runCmd,group,hostDetail,graph
+from triWeb import boot_login
 
 from triWeb import batchAddServer,monitor
 #from django.views.generic.simple import redirect_to
@@ -47,4 +48,7 @@ urlpatterns = patterns('',
 	(r'^graph/$', hostDetail.graphs),
 	(r'^highchart/$',graph.weather_chart_view),
 	(r'^highchart2/$',graph.ping_status_view),
+	#----------for bootstrap-------
+	(r'^login/$', boot_login.login),
+	(r'^static/(?P<path>.*)$', 'django.views.static.serve'),
 )

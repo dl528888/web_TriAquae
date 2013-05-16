@@ -23,7 +23,7 @@ class PingStatusAdmin(admin.ModelAdmin):
 	list_display = ('ip','ping_value')
 
 class HostLogAdmin(admin.ModelAdmin):
-	list_display = ('ip','event_type','cmd','event_log','result','note')
+	list_display = ('ip','event_type','cmd','event_log','result','note','track_mark')
 	list_filter = ('track_mark','ip','event_type','result')
 
 
