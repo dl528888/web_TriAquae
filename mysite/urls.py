@@ -8,7 +8,10 @@ from triWeb import batchAddServer,monitor
 from django.conf import settings
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
+from triWeb import login
+
 admin.autodiscover()
+
 
 urlpatterns = patterns('',
     # Examples:
@@ -51,4 +54,6 @@ urlpatterns = patterns('',
 	#----------for bootstrap-------
 	(r'^login/$', boot_login.login),
 	(r'^static/(?P<path>.*)$', 'django.views.static.serve'),
+	(r'^account/login/$', login.login_view),
+	(r'^account/logout/$', login.logout_view),
 )

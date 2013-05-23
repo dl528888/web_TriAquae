@@ -11,13 +11,14 @@ class Group(models.Model):
 	def __unicode__(self):
                 #return u'%s %s' %(self.group_name,self.parent_group)
 		return self.group_name
-		
+
 class User(models.Model):
         user_name = models.CharField(max_length=30)
         email   = models.EmailField()
         phone   = models.IntegerField(max_length=13)
         group_name = models.ManyToManyField(Group,verbose_name='Member of groups')
-
+	access_ip_list = models.ManyToManyField('IP',verbose_name = "Access IP list")
+        RSA_KEY_file = models.CharField(max_length=100)
         def __unicode__(self):
                 return self.user_name
 class MonitorMethod(models.Model):
@@ -56,7 +57,18 @@ class IP(models.Model):
         def __unicode__(self):
                 return self.ip
 
+'''
+class User(models.Model):
+        user_name = models.CharField(max_length=30)
+        email   = models.EmailField()
+        phone   = models.IntegerField(max_length=13)
+        group_name = models.ManyToManyField(Group,verbose_name='Member of groups')
+        access_ip_list = models.ManyToManyField(IP,verbose_name = "Access IP list")
+	RSA_KEY_file = models.CharField(max_length=100)
 
+        def __unicode__(self):
+                return self.user_name
+'''
 class MonthlyWeatherByCity(models.Model):
 	month = models.IntegerField()
 	Bejing_temp= models.DecimalField(max_digits=5,decimal_places=1)

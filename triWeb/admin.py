@@ -12,7 +12,8 @@ class BookAdmin(admin.ModelAdmin):
 	fields = ('title','publisher','authors','publication_date')
 	filter_vertical = ('authors',)
 	raw_id_fields = ('publisher',)
-
+class UserAdmin(admin.ModelAdmin):
+	filter_horizontal = ('access_ip_list',)
 class IpAdmin(admin.ModelAdmin):
 	list_display = ('ip','server_name','opreating_system','status')
 	search_fields = ('ip','server_name','opreating_system')
@@ -28,7 +29,7 @@ class HostLogAdmin(admin.ModelAdmin):
 
 
 admin.site.register(IP,IpAdmin)
-admin.site.register(User)
+admin.site.register(User,UserAdmin)
 admin.site.register(Group,GroupAdmin)
 admin.site.register(MonitorMethod)
 admin.site.register(MonthlyWeatherByCity)
