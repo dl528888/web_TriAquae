@@ -3,6 +3,7 @@ import os
 import sys
 '''
 for running from bae
+will sync by git hook
 '''
  
 os.environ['DJANGO_SETTINGS_MODULE'] = 'TriAquae.settings'
