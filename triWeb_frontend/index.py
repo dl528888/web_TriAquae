@@ -1,6 +1,9 @@
 #-*- coding:utf-8 -*-
 import os
 import sys
+'''
+for running from bae
+'''
  
 os.environ['DJANGO_SETTINGS_MODULE'] = 'TriAquae.settings'
  
