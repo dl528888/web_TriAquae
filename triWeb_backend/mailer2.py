@@ -11,8 +11,8 @@ mailto_list=["axli@advent.com","triaquae@mail.com"]
 
 #SMTP server
 mail_host="smtp.126.com"
-mail_user="lijie3721"
-mail_pass="Alex3714!"
+mail_user="test"
+mail_pass="123456"
 mail_postfix="126.com"
 #----------------
 subject = sys.argv[1]
