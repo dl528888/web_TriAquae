@@ -2,7 +2,7 @@
 
 import db_connector
 
-from triWeb.models import MultiRunCounter
+from web01.models import MultiRunCounter
 
 
 def AddNumber():
@@ -14,4 +14,4 @@ def AddNumber():
 if __name__ == '__main__':
 	print 'This module can not be run by it self,must be called by other programs.'
 #else:
-#	AddNumber()
+#AddNumber()
