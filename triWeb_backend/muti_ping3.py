@@ -5,8 +5,8 @@ from subprocess import Popen
 #------------
 ###################-------------------------------
 import db_connector
-ip_list = db_connector.IpMachine.objects.filter(ip__startswith='10.98.33.')
-
+#ip_list = db_connector.IpMachine.objects.filter(ip__startswith='10.98.33.')
+ip_list = db_connector.IpMachine.objects.all()
 ping_status_dic = {}
 ping_error_list = []
 p = [] # ip -> process
@@ -14,6 +14,9 @@ p = [] # ip -> process
 for i in ip_list:
 	#ip = "10.98.33.%s" % i
 	ip = i.ip
+	if len(db_connector.ServerStatus.objects.filter(host = ip)) ==0:
+		insert_status_item = db_connector.ServerStatus.objects.create(host = ip)
+		insert_status_item.save()
 	p.append((ip, Popen(['ping', '-c', '3', ip], stdout=subprocess.PIPE)))
 
 while p:
@@ -32,12 +35,13 @@ for ip,result in ping_status_dic.items():
 	status = result[0].split('received,')[1].split('%')[0].strip()
 	if 'rtt' in result[0]: # normal
 		rtt = result[0].split('\n')[-2]
-		print ip,status,rtt
-		ok_ip = db_connector.IpMachine.objects.get(ip=ip)
+		#print ip,status,rtt
+		ok_ip = db_connector.ServerStatus.objects.get(host=ip)
 		ok_ip.ping_status = rtt
 		ok_ip.host_status = 'UP'
 		ok_ip.save()
 	elif 'error' in status:   #unreachable
+		
 		print ip,'err',status.split()[-1]
 
 	else:   # 
@@ -71,7 +75,7 @@ if len(ping_error_list) > 0:
 
 	if Port_status_dic:
 		for err_ip,port_status in Port_status_dic.items():
-			ip = db_connector.IpMachine.objects.get(ip=err_ip)
+			ip = db_connector.ServerStatus.objects.get(host= err_ip)
 			msg= "Ping doesn't work. Telnet port:22 Reachable: %s" % port_status
 			ip.ping_status = msg
 			if port_status == 'NO':
@@ -80,8 +84,8 @@ if len(ping_error_list) > 0:
 				ip.host_status = 'UP'
 			ip.save()
 			
-for ip in ping_error_list:
-       print ip,'error'
+#for ip in ping_error_list:
+#       print ip,'error'
 
 print "\033[32;1m Ok: %s , unreachable:%s\033[0m" %(len(ping_status_dic),len(ping_error_list))
 

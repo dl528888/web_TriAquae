@@ -34,6 +34,7 @@ def RecordLogSummary(Action,LogType,TrackMark,RunUser='null',Cmd='null',TotalTas
 		success_num = 0,
 		failed_num = 0,
 		track_mark = TrackMark,
+		note = Note,
 
 		)
 	
