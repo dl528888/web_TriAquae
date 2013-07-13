@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 import os
 import sys
+'''
+running from shell local debug
+'''
 
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "TriAquae.settings")
