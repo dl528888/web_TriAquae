@@ -31,5 +31,17 @@ for name,oid in snmp_oid_list.items():
 	snmp_data[name] = result[1:]
 
 
+STEP = 2
+HEARTBEAT = 4
+
+def draw_graph(rrdfile_name):
+	os.system('''rrdtool graph /var/www/CpuIdle.png --start now-1h --title "CPU Idle percentage" --color "BACK#C3CAD1" --color "CANVAS#0a0a0a"   --color "SHADEB#9999CC"   --height 200 --width 600 --slope-mode --alt-autoscale --lower-limit 0 DEF:max_CpuIdle=%s:CpuIdle:MAX  LINE1:max_CpuIdle#0000FF:CpuIdle     ''' % rrdfile_name  )
+
+
 for name,data in  snmp_data.items():
-	if name == ''data[0].split()[1]
+	if  name == 'CpuIdle':
+		rrdfile = '/var/www/%s.rrd' % name
+		cpu_idle = data[0].split()[1]
+		#os.system('''rrdtool create %s --start now-1h --step 2  DS:CpuIdle:GAUGE:%s:U:U \RRA:MAX:0.5:1:300''' % (rrdfile,HEARTBEAT) ) 
+		os.system("rrdtool update %s --template 'CpuIdle' N:%s" % (rrdfile,cpu_idle)) 
+		draw_graph(rrdfile)
