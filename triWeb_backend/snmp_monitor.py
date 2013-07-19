@@ -22,12 +22,15 @@ snmp_oid_list = {
 		'Load' : ".1.3.6.1.4.1.2021.10|grep laLoad.[0-9]|awk -F: '{print $4}'|xargs echo 'load='",
 		'CpuIdle' : '.1.3.6.1.4.1.2021.11', # in percentage
 		'CpuUsage': '''.1.3.6.1.4.1.2021.11|grep Cpu |awk -F'::' '{print $2}' ''',	
+		'IfDescr' : "ifDescr |awk -F'::' '{print $2}'",
+		'IfIn'	: "ifInOctets |awk -F'::' '{print $2}' ",
+		'IfOut' : "ifOutOctets |awk -F'::' '{print $2}'",
 	}
 
 snmp_version = '2c'
 community_name = 'public'
 
-snmp_data = {'Mem_list' : []}
+snmp_data = {'Mem_list' : [],'Ip_speed' : []}
 Mem_list = []
 Cpu_usage = []
 for name,oid in snmp_oid_list.items():
@@ -39,6 +42,9 @@ for name,oid in snmp_oid_list.items():
 	if name == 'CpuUsage':
 		snmp_data[name] = cmd_result
 		continue
+	if name == 'IfDescr' or name == 'IfIn' or name == 'IfOut':
+		snmp_data['Ip_speed'].append(cmd_result.split('\n'))
+                continue		
 	result = cmd_result.strip('\n').split('=')
 	snmp_data[name] = result[1:]
 
@@ -46,7 +52,7 @@ for name,oid in snmp_oid_list.items():
 STEP = 2
 HEARTBEAT = 600 
 
-def draw_graph(rrdfile_name,DS):
+def draw_graph(rrdfile_name,DS,addtional=0):
 	if DS == 'CpuUsage':
 		os.system('''rrdtool graph /var/www/%s.png \\
 		--start now-1h --title "CPU Usage" \\
@@ -61,6 +67,21 @@ def draw_graph(rrdfile_name,DS):
 		AREA:value2#0000ff:"cpu_system %s" \\
 		AREA:value3#E04000:"cpu_user %s"\\
 		--alt-y-grid COMMENT:"Last update %s" ''' % (DS,rrdfile_name, rrdfile_name, rrdfile_name,cpu_idle,cpu_system,cpu_user, date)  )
+	if DS == 'Ip_speed':
+		eth_name = addtional
+		print eth_name
+		os.system('''rrdtool graph /var/www/%s.png \\
+		--start now-1h --title "%s speed " \\
+		--vertical-label "kb" \\
+		--height 200 --width 600 \\
+		--slope-mode --alt-autoscale 	\\
+		DEF:value1=%s:in:MAX \\
+		DEF:value2=%s:out:MAX \\
+		AREA:value1#f007:"in_speed %sBit" \\
+		AREA:value2#0f05:"out_speed %sBit" \\
+		--alt-y-grid  \\
+		COMMENT:"Last update %s" \\
+		''' %(eth_name,eth_name,rrdfile_name,rrdfile_name,in_speed,out_speed ,date ))
 	if DS == 'Load':
 		os.system('''rrdtool graph /var/www/%s.png \\
 		--start now-1h --title "System Load Average" \\
@@ -168,7 +189,34 @@ for name,data in  snmp_data.items():
 			os.system('''rrdtool updatev %s --template 'RAM_used:Cached:SWAP_used' N:%s:%s:%s \\
 			''' % (rrdfile ,MEM_used,Cached_MEM, SWAP_used ))
 			draw_graph(rrdfile,name)
-		#for k,v in info_dic.items():print k,v
+	elif name == 'Ip_speed':
+		ip_speed_dic = {}
+		
+		for i in data:
+			for item in i:
+				if len(item) ==0:break
+				ip_speed_dic[item.split()[0]] = item.split()[3]
+		for obj_name,value in ip_speed_dic.items():
+	
+			if obj_name.startswith('ifDescr'):
+				ethernet_name = ip_speed_dic[obj_name] 
+				in_speed = int(ip_speed_dic['ifInOctets.%s' % obj_name[-1]]) / 8 /1000
+				out_speed = int(ip_speed_dic['ifOutOctets.%s' % obj_name[-1]]) /8 /1000
+				print ethernet_name,in_speed,out_speed
+
+				rrd_file = '/var/www/%s.rrd' % ethernet_name
+				try:
+                                	os.lstat(rrd_file)
+                        	except OSError:
+					os.system('''rrdtool create %s --step 50 \\
+					DS:in:GAUGE:%s:U:U \\
+					DS:out:GAUGE:%s:U:U \\
+					RRA:MAX:0.5:1:300 \\
+					''' %(rrd_file,HEARTBEAT,HEARTBEAT ) )
+				os.system('''rrdtool updatev %s --template 'in:out' N:%s:%s ''' %(rrd_file, in_speed, out_speed) )
+				print '+++++++++++-------------<<<<<<<<<<<<'
+				draw_graph(rrd_file,name,ethernet_name)
+		print ip_speed_dic
 	else :
 		pass
 		#print name,data
