@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os
+import os,sys
 import time 
 
 date =time.strftime('%Y_%m_%d %H\:%M\:%S')
@@ -26,15 +26,29 @@ snmp_oid_list = {
 		'IfIn'	: "ifInOctets |awk -F'::' '{print $2}' ",
 		'IfOut' : "ifOutOctets |awk -F'::' '{print $2}'",
 	}
-
-snmp_version = '2c'
-community_name = 'public'
-
+	
+try:
+  err_msg = '''Error:wrong argument!
+        usage: ./snmp_monitory.py -v 2c -c public -h 192.168.2.33\n'''
+  if sys.argv[1] == '-h' or len(sys.argv) == 0:
+	print err_msg
+	sys.exit()
+  if '-v' and '-c' and '-h' in sys.argv:
+	snmp_version =  sys.argv[sys.argv.index('-v') + 1]
+	community_name = sys.argv[sys.argv.index('-c') + 1]
+	ip_addr = sys.argv[sys.argv.index('-h') + 1]
+	print 'version',snmp_version,'comm_name', community_name , ip_addr
+  else:
+	print err_msg	
+	sys.exit()
+except IndexError:
+	print err_msg
+	sys.exit() 
 snmp_data = {'Mem_list' : [],'Ip_speed' : []}
 Mem_list = []
 Cpu_usage = []
 for name,oid in snmp_oid_list.items():
-	cmd = "snmpwalk -v %s -c %s %s %s" %  (snmp_version, community_name, 'localhost' , oid)
+	cmd = "snmpwalk -v %s -c %s %s %s" %  (snmp_version, community_name, ip_addr , oid)
 	cmd_result = os.popen(cmd).read()
 	if name == 'StorageTable' or name == 'MemTable':
 		snmp_data['Mem_list'].append(cmd_result.split('\n'))
@@ -51,10 +65,11 @@ for name,oid in snmp_oid_list.items():
 
 STEP = 2
 HEARTBEAT = 600 
-
-def draw_graph(rrdfile_name,DS,addtional=0):
+Period = 'now-1h'
+PIC_DIR = '/var/www/'
+def draw_graph(rrdfile_name,DS,ip,addtional=0):
 	if DS == 'CpuUsage':
-		os.system('''rrdtool graph /var/www/%s.png \\
+		os.system('''rrdtool graph %s%s_%s_%s.png \\
 		--start now-1h --title "CPU Usage" \\
 		--vertical-label "Idle in percentage" \\
 		--color "BACK#C3CAD1" --color "CANVAS#0a0a0a"   --color "SHADEB#9999CC" \\
@@ -66,11 +81,11 @@ def draw_graph(rrdfile_name,DS,addtional=0):
 		AREA:value1#00ff00:"cpu_idle %s" \\
 		AREA:value2#0000ff:"cpu_system %s" \\
 		AREA:value3#E04000:"cpu_user %s"\\
-		--alt-y-grid COMMENT:"Last update %s" ''' % (DS,rrdfile_name, rrdfile_name, rrdfile_name,cpu_idle,cpu_system,cpu_user, date)  )
+		--alt-y-grid COMMENT:"Last update %s" ''' % (PIC_DIR,ip,DS,Period, rrdfile_name, rrdfile_name, rrdfile_name,cpu_idle,cpu_system,cpu_user, date)  )
 	if DS == 'Ip_speed':
 		eth_name = addtional
 		print eth_name
-		os.system('''rrdtool graph /var/www/%s.png \\
+		os.system('''rrdtool graph %s%s_%s_%s.png \\
 		--start now-1h --title "%s speed " \\
 		--vertical-label "kb" \\
 		--height 200 --width 600 \\
@@ -81,9 +96,9 @@ def draw_graph(rrdfile_name,DS,addtional=0):
 		AREA:value2#0f05:"out_speed %sBit" \\
 		--alt-y-grid  \\
 		COMMENT:"Last update %s" \\
-		''' %(eth_name,eth_name,rrdfile_name,rrdfile_name,in_speed,out_speed ,date ))
+		''' %(PIC_DIR,ip,eth_name,Period,eth_name,rrdfile_name,rrdfile_name,in_speed,out_speed ,date ))
 	if DS == 'Load':
-		os.system('''rrdtool graph /var/www/%s.png \\
+		os.system('''rrdtool graph %s%s_%s_%s.png \\
 		--start now-1h --title "System Load Average" \\
 		--vertical-label "LOAD AVERAGE" \\
 		--height 200 --width 600 \\
@@ -91,12 +106,12 @@ def draw_graph(rrdfile_name,DS,addtional=0):
  		DEF:value1=%s:Load_1:MAX \\
 		DEF:value2=%s:Load_5:MAX \\
 		DEF:value3=%s:Load_15:MAX \\
-		AREA:value1#00ff00:Load_1min \\
-		LINE2:value2#0000ff:Load_5 \\
-		LINE3:value3#E04000:Load_15  \\
-		COMMENT:"Last update %s" --alt-y-grid  ''' % (DS,rrdfile_name,rrdfile_name,rrdfile_name,date )  )
+		AREA:value1#00ff00:"1min %s"  \\
+		LINE2:value2#0000ff:"5min %s" \\
+		LINE3:value3#E04000:"15min %s" \\
+		COMMENT:"Last update %s" --alt-y-grid  ''' % (PIC_DIR,ip,DS,Period,rrdfile_name,rrdfile_name,rrdfile_name,load_1,load_5,load_15,date )  )
 	if DS == 'Mem_list':
-		os.system('''rrdtool graph /var/www/%s.png \\
+		os.system('''rrdtool graph %s%s_%s_%s.png \\
 		--start now-1h --title "Memory usage" \\
 		--vertical-label "MEMORY(MB)"	\\
 		--height 200 --width 600 \\
@@ -112,9 +127,9 @@ def draw_graph(rrdfile_name,DS,addtional=0):
 		COMMENT:"Last update %s" \\
 		COMMENT:"Total_RAM %sM" \\
 		COMMENT:"Total_SWAP %sM" \\
-		''' % (DS,rrdfile_name,rrdfile_name,rrdfile_name,MEM_used,Cached_MEM,SWAP_used, date,Total_RAM,Total_SWAP  ))
+		''' % (PIC_DIR,ip,DS,Period,rrdfile_name,rrdfile_name,rrdfile_name,MEM_used,Cached_MEM,SWAP_used, date,Total_RAM,Total_SWAP  ))
 for name,data in  snmp_data.items():
-	rrdfile = '/var/www/%s.rrd' % name
+	rrdfile = '%s%s_%s.rrd' % (PIC_DIR,ip_addr,name)
 	
 	if  name == 'CpuIdle':
 		cpu_idle = data[0].split()[1]
@@ -124,7 +139,7 @@ for name,data in  snmp_data.items():
 		except OSError:
 			os.system('''rrdtool create %s --step 50  DS:%s:GAUGE:%s:0:100  RRA:MAX:0.5:1:2880 ''' % (rrdfile,name,HEARTBEAT) ) 
 		os.system("rrdtool updatev %s --template %s  N:%d" % (rrdfile,name,int(cpu_idle) )) 
-		draw_graph(rrdfile,name)
+		draw_graph(rrdfile,name,ip_addr)
 	elif name == 'CpuUsage':
 		cpu_dic = {}
 		info_list =  data.split('\n')
@@ -134,6 +149,7 @@ for name,data in  snmp_data.items():
 		cpu_idle = cpu_dic['ssCpuIdle.0']
 		cpu_system = cpu_dic['ssCpuSystem.0']
 		cpu_user = cpu_dic['ssCpuUser.0']
+		print 'CpuUsage:',cpu_idle,cpu_system,cpu_user
 		try:
                         os.lstat(rrdfile)
                 except OSError:
@@ -144,18 +160,18 @@ for name,data in  snmp_data.items():
 			RRA:MAX:0.5:1:2880 ''' % (rrdfile,HEARTBEAT,HEARTBEAT,HEARTBEAT) )
 
                 os.system("rrdtool updatev %s --template 'cpu_idle:cpu_system:cpu_user'  N:%s:%s:%s" % (rrdfile,int(cpu_idle), cpu_system, cpu_user ))
-		draw_graph(rrdfile,name)
+		draw_graph(rrdfile,name,ip_addr)
 	elif name == 'Load':
 		load_1 = data[0].split()[0]
 		load_5 = data[0].split()[1]
 		load_15 = data[0].split()[2]
-		print load_1, load_5, load_15
+		print 'Load:',load_1, load_5, load_15
 		try:
                         os.lstat(rrdfile)
                 except OSError:
                         os.system('''rrdtool create %s --step 50  DS:Load_1:GAUGE:%s:0:100  DS:Load_5:GAUGE:%s:0:100 DS:Load_15:GAUGE:%s:0:100  RRA:MAX:0.5:1:2880 ''' % (rrdfile,HEARTBEAT,HEARTBEAT,HEARTBEAT) )
                 os.system("rrdtool updatev %s --template 'Load_1:Load_5:Load_15'  N:%s:%s:%s" % (rrdfile,load_1,load_5,load_15 ))
-                draw_graph(rrdfile,name)
+                draw_graph(rrdfile,name,ip_addr)
 	elif name == 'Mem_list':
 		info_dic = {}
 		for i in data:
@@ -174,9 +190,8 @@ for name,data in  snmp_data.items():
 			Buffer_MEM = int(info_dic['memBuffer.0']) /1024
 			MEM_used = Total_RAM - Free_MEM
 			SWAP_used = Total_SWAP - Free_SWAP
-			SWAP_used = 520
-			print Total_RAM,Total_SWAP,Cached_MEM,Free_SWAP,Free_MEM,Buffer_MEM
-			print "+++++++++", MEM_used,SWAP_used,Cached_MEM
+			#SWAP_used = 520
+			print "Memory:", MEM_used,SWAP_used,Cached_MEM
 			try:
 				os.lstat(rrdfile)
 			except OSError:
@@ -188,7 +203,7 @@ for name,data in  snmp_data.items():
 				''' % (rrdfile,HEARTBEAT,HEARTBEAT,HEARTBEAT)  )
 			os.system('''rrdtool updatev %s --template 'RAM_used:Cached:SWAP_used' N:%s:%s:%s \\
 			''' % (rrdfile ,MEM_used,Cached_MEM, SWAP_used ))
-			draw_graph(rrdfile,name)
+			draw_graph(rrdfile,name,ip_addr)
 	elif name == 'Ip_speed':
 		ip_speed_dic = {}
 		
@@ -202,9 +217,9 @@ for name,data in  snmp_data.items():
 				ethernet_name = ip_speed_dic[obj_name] 
 				in_speed = int(ip_speed_dic['ifInOctets.%s' % obj_name[-1]]) / 8 /1000
 				out_speed = int(ip_speed_dic['ifOutOctets.%s' % obj_name[-1]]) /8 /1000
-				print ethernet_name,in_speed,out_speed
+				print "Network:", ethernet_name,in_speed,out_speed
 
-				rrd_file = '/var/www/%s.rrd' % ethernet_name
+				rrd_file = '%s%s_%s.rrd' % (PIC_DIR,ip_addr,ethernet_name)
 				try:
                                 	os.lstat(rrd_file)
                         	except OSError:
@@ -214,9 +229,7 @@ for name,data in  snmp_data.items():
 					RRA:MAX:0.5:1:300 \\
 					''' %(rrd_file,HEARTBEAT,HEARTBEAT ) )
 				os.system('''rrdtool updatev %s --template 'in:out' N:%s:%s ''' %(rrd_file, in_speed, out_speed) )
-				print '+++++++++++-------------<<<<<<<<<<<<'
-				draw_graph(rrd_file,name,ethernet_name)
-		print ip_speed_dic
+				draw_graph(rrd_file,name,ip_addr, ethernet_name)
 	else :
 		pass
 		#print name,data
