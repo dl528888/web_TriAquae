@@ -6,7 +6,7 @@ from subprocess import Popen
 ###################-------------------------------
 import db_connector
 #ip_list = db_connector.IpMachine.objects.filter(ip__startswith='10.98.33.')
-ip_list = db_connector.IpMachine.objects.all()
+ip_list = db_connector.IpMachine.objects.filter(snmp_on = 'YES' )
 ping_status_dic = {}
 ping_error_list = []
 p = [] # ip -> process
@@ -58,10 +58,12 @@ for ip,result in ping_status_dic.items():
 
 T = []
 Port_status_dic = {}
+
 if len(ping_error_list) > 0:
 	for i in ping_error_list:
 		ip = "%s" % i
-        	T.append((ip, Popen(['nc', '-w', '1', ip,'22'], stdout=subprocess.PIPE)))
+		port = str(db_connector.IpMachine.objects.get(ip= ip).port)
+        	T.append((ip, Popen(['nc', '-w', '1', ip, port ], stdout=subprocess.PIPE)))
 	
 	while T:
 		for i, (ip,proc) in enumerate(T[:]):
@@ -87,5 +89,6 @@ if len(ping_error_list) > 0:
 #for ip in ping_error_list:
 #       print ip,'error'
 
-print "\033[32;1m Ok: %s , unreachable:%s\033[0m" %(len(ping_status_dic),len(ping_error_list))
+down_servers = Port_status_dic.values().count('NO')
+print "\033[32;1m Ok: %s , unreachable:%s\033[0m" %(len(ping_status_dic), down_servers)
 

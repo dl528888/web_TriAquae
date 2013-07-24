@@ -47,6 +47,17 @@ except IndexError:
 snmp_data = {'Mem_list' : [],'Ip_speed' : []}
 Mem_list = []
 Cpu_usage = []
+
+def test_snmp():
+	cmd = "snmpwalk -v %s -c %s %s system" %  (snmp_version, community_name, ip_addr)
+	cmd_result = os.system(cmd)
+	if cmd_result != 0:
+		print "Couldn't connect to SNMP,please check the network or snmp configuration!"
+		sys.exit()
+#Test snmp before run bulk snmp commands
+test_snmp()
+
+#run bulk snmp commands to gather system performance data
 for name,oid in snmp_oid_list.items():
 	cmd = "snmpwalk -v %s -c %s %s %s" %  (snmp_version, community_name, ip_addr , oid)
 	cmd_result = os.popen(cmd).read()
