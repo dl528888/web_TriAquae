@@ -7,6 +7,9 @@ import db_connector,logger,MultiRunCounter
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 script = 'python %s/run_command3.py' % cur_dir
 
+
+
+
 try:
 	if sys.argv[1] == '-h':
 		print '''\n\033[32;1mUsage: python multiprocessing_runCMD.py track_num 'ip_list' cmd run_user\033[0m

@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
 import db_connector
-
 from web01.models import OpsLog 
-
 
 def AddNumber():
 	current_num =  OpsLog.objects.latest('track_mark').track_mark #MultiRunCounter.objects.all()[0]

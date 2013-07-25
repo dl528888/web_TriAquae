@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys,os,time
+import sys,os
 sys.path.append('/home/alex/py_training/py_web')
 os.environ['DJANGO_SETTINGS_MODULE'] ='py_web.settings'
 #----------------Use Django Mysql model----------------

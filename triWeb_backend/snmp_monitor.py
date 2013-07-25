@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os,sys
-import time 
-
+import time,datetime 
+#date = datetime.datetime.now()
 date =time.strftime('%Y_%m_%d %H\:%M\:%S')
 snmp_oid_list = {
 		#'SystemVersion': '.1.3.6.1.2.1.1.1.0',
@@ -28,28 +28,42 @@ snmp_oid_list = {
 	}
 	
 try:
-  err_msg = '''Error:wrong argument!
-        usage: ./snmp_monitory.py -v 2c -c public -h 192.168.2.33\n'''
+  err_msg = '''\033[31;1mError:wrong argument,please check!!!\033[0m
+usage: ./snmp_monitory.py -v 2c -c public -h 192.168.2.33\n
+	./snmp_monitor.py -v 3 -u my_uername -l auth -a MD5 -A my_password -h 192.168.3.42\n
+	'''
   if sys.argv[1] == '-h' or len(sys.argv) == 0:
 	print err_msg
 	sys.exit()
-  if '-v' and '-c' and '-h' in sys.argv:
+  if '-v'  and '-h' in sys.argv:
 	snmp_version =  sys.argv[sys.argv.index('-v') + 1]
-	community_name = sys.argv[sys.argv.index('-c') + 1]
+	if snmp_version == '2c':
+		community_name = sys.argv[sys.argv.index('-c') + 1]
+	elif snmp_version == '3':
+		snmp_user = sys.argv[sys.argv.index('-u') + 1]
+		snmp_auth = sys.argv[sys.argv.index('-l') + 1]
+		snmp_MD5 = sys.argv[sys.argv.index('-a') + 1]
+		snmp_pass = sys.argv[sys.argv.index('-A') + 1]
+	
 	ip_addr = sys.argv[sys.argv.index('-h') + 1]
-	print 'version',snmp_version,'comm_name', community_name , ip_addr
   else:
 	print err_msg	
 	sys.exit()
 except IndexError:
 	print err_msg
-	sys.exit() 
+	sys.exit()
+except ValueError:
+        print err_msg
+        sys.exit() 
 snmp_data = {'Mem_list' : [],'Ip_speed' : []}
 Mem_list = []
 Cpu_usage = []
 
 def test_snmp():
-	cmd = "snmpwalk -v %s -c %s %s system" %  (snmp_version, community_name, ip_addr)
+	if snmp_version == '2c':
+		cmd = "snmpwalk -v %s -c %s %s system" %  (snmp_version, community_name, ip_addr)
+	if snmp_version == '3':
+		cmd = "snmpwalk -v %s -u %s -l %s -a %s -A %s %s system" %(snmp_version, snmp_user, snmp_auth, snmp_MD5, snmp_pass, ip_addr)
 	cmd_result = os.system(cmd)
 	if cmd_result != 0:
 		print "Couldn't connect to SNMP,please check the network or snmp configuration!"
@@ -59,7 +73,11 @@ test_snmp()
 
 #run bulk snmp commands to gather system performance data
 for name,oid in snmp_oid_list.items():
-	cmd = "snmpwalk -v %s -c %s %s %s" %  (snmp_version, community_name, ip_addr , oid)
+        if snmp_version == '2c':
+                cmd = "snmpwalk -v %s -c %s %s %s" %  (snmp_version, community_name, ip_addr,oid)
+        if snmp_version == '3':
+                cmd = "snmpwalk -v %s -u %s -l %s -a %s -A %s %s %s" %(snmp_version, snmp_user, snmp_auth, snmp_MD5, snmp_pass, ip_addr, oid)
+	#cmd = "snmpwalk -v %s -c %s %s %s" %  (snmp_version, community_name, ip_addr , oid)
 	cmd_result = os.popen(cmd).read()
 	if name == 'StorageTable' or name == 'MemTable':
 		snmp_data['Mem_list'].append(cmd_result.split('\n'))
