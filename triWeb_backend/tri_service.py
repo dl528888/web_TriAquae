@@ -38,10 +38,12 @@ def stop_service(service_name):
 	if service_status(service_name) == 'Running':
 		cmd_result = os.system(cmd)
 		if cmd_result == 0:
+			print 'ddd'
 			print '..............\n'
 			time.sleep(1)
 			print '\033[31;1m%s stopped! \033[0m' % service_name
-
+		else:
+			print '\033[31;1mCannot stop %s service successfully,please manually kill the pid!\033[0m' % service_name
 	else:
 		print 'Service is not running...,nothing to kill! '
 def service_status(service_name):
@@ -57,7 +59,7 @@ def service_status(service_name):
 		return "Dead"
 try:
 	if sys.argv[1] == 'start':
-		status_monitor(15)
+		status_monitor(30)
 		snmp_monitor()
 	elif sys.argv[1] == 'stop':
 		stop_service(snmp_monitor_script)

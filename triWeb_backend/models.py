@@ -12,6 +12,14 @@ class IpMachine(models.Model):
 	opreating_system = models.CharField(max_length=30)
 	group = models.ManyToManyField('IpGroup')	
 	idc = models.ForeignKey('IDC', null=True, blank=True)
+	alert_limit = models.IntegerField(default=5)
+	snmp_on = models.CharField(max_length=10,default='YES')
+	snmp_version = models.CharField(max_length=10,default='2c')
+	snmp_community_name = models.CharField(max_length=50,default='public')
+	snmp_security_level = models.CharField(max_length=50,default='auth')
+	snmp_auth_protocol = models.CharField(max_length=50,default='MD5')
+	snmp_user = models.CharField(max_length=50,default='triaquae_snmp')	
+	snmp_pass = models.CharField(max_length=50,default='my_pass')
 	#for monitor	
 	def __unicode__(self):
 		return self.ip
@@ -21,7 +29,10 @@ class ServerStatus(models.Model):
         ping_status = models.CharField(max_length=100,default='Unkown')
         last_check = models.DateTimeField(auto_now_add=True)
         host_uptime = models.CharField(max_length=50,default='Unkown')
-        attempt_count = models.CharField(max_length=25,null=True,blank=True)
+        attempt_count = models.IntegerField(default=0)
+	breakdown_count = models.IntegerField(default=0)
+	up_count = models.IntegerField(default=0)
+	availability = models.CharField(max_length=20,default=0)
 	def __unicode__(self):
                 return self.host
 class IDC(models.Model):
