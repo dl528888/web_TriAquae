@@ -26,7 +26,7 @@ def snmp_monitor():
                 print "\033[33;1mTriAquae SNMP monitor service is already running!\033[0m\n" 
         else:
                 print "Starting TriAquae SNMP monitor service...." 
-                cmd = 'nohup python %s  >> tri_service.log &' % (script)
+                cmd = 'nohup python %s  >> tri_snmp_service.log &' % (script)
                 result  = os.system(cmd)
                 if result == 0:
                         print '\033[32;1mTriAquae SNMP monitor service started!\033[0m'

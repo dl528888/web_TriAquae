@@ -43,7 +43,7 @@ for ip,result in ping_status_dic.items():
 		ok_ip.ping_status = rtt
 		ok_ip.host_status = 'UP'
 		if ok_ip.attempt_count != 0:
-			recover_list.append(ok_ip)
+			recover_list.append(ok_ip.host)
 			ok_ip.attempt_count = 0
 		ok_ip.up_count += 1
 		if ok_ip.up_count == 0:
@@ -102,7 +102,7 @@ if len(ping_error_list) > 0:
 			else:
 				ip.host_status = 'UP'
                 		if ip.attempt_count != 0:
-                        		recover_list.append(ip)
+                        		recover_list.append(ip.host)
 					ip.attempt_count = 0
 				ip.up_count +=1
 			if ip.up_count == 0:
@@ -119,18 +119,24 @@ if len(ping_error_list) > 0:
 down_servers = Port_status_dic.values().count('NO')
 print "\033[32;1m Ok: %s , unreachable:%s\033[0m" %(len(ping_status_dic), down_servers)
 
-down_ip_list = Port_status_dic.keys()
+down_ip_list =[]
+
+#not sending email again after exceeds the alert limit!
+for ip_addr in Port_status_dic.keys():
+	alert_limit = db_connector.IpMachine.objects.get(ip=ip_addr).alert_limit
+	down_count =  db_connector.ServerStatus.objects.get(host=ip_addr).attempt_count
+	if alert_limit >=  down_count:down_ip_list.append(ip_addr)	
 
 alert_server_dic = {'DOWN': down_ip_list, 'RECOVERED': recover_list}
 
 
 mail_alert_down_dic = {}
 mail_alert_recover_dic  = {}
+
+#Add down and recovered IP list to above 2 dics
 for user,user_ip_list in get_user_ip_list.can_access_dic.items():
 	mail_alert_down_dic[user] = []
 	mail_alert_recover_dic[user]  = []
-	#for alert_type,ip_list  in alert_server_dic.items():
-		#alert_type,ip_list
 	for ip in alert_server_dic['DOWN']:
 			
 		if ip in user_ip_list:
@@ -140,23 +146,28 @@ for user,user_ip_list in get_user_ip_list.can_access_dic.items():
 	for ip in alert_server_dic['RECOVERED']:
                if ip in user_ip_list:
 			mail_alert_recover_dic[user].append(ip)
+			print ip
 
 def mail_alert(alert_dic,subject):
 	for email,ip_list in alert_dic.items():
 		email_list = [email]
-		if mailer.send_mail(email, subject, ", ".join(ip_list) ):
-	        	print "Mail sent success!"
-    		else:
-        		print "Mail sent failed!" 
+		if len(ip_list) !=0:
+		
+			print 'send email to ',email,ip_list
+			if mailer.send_mail(email, '%s %s'%(subject,",".join(ip_list)) , ", ".join(ip_list) ):
+	        		print "Mail sent success!"
+    			else:
+        			print "Mail sent failed!" 
 
 
 print mail_alert_down_dic
-
+print '\033[32;1m-----------------\033[0m'
 print mail_alert_recover_dic 
-'''
-if down_ip_list is not None:
-	mail_alert(get_mail_list(down_ip_list),"Servers down!!!")
-if recover_list is not None:
-	mail_alert(get_mail_list(recover_list),"Servers recoverd!!!")
-'''
+print alert_server_dic['RECOVERED']
+
+if len(down_ip_list) != 0:
+	mail_alert(mail_alert_down_dic,"Alert:Servers down!!!")
+if len(recover_list) !=0:
+	mail_alert(mail_alert_recover_dic,"Notice:Servers recoverd!!!")
+
 print 'these server have recovered!', recover_list

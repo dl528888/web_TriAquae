@@ -23,7 +23,7 @@ except IndexError:
 #server address, user, pass
 mail_host="smtp.126.com"
 mail_user="lijie3721"
-mail_pass="Alex3714!"
+mail_pass="youPassword"
 mail_postfix="126.com"
 ######################
 def send_mail(to_list,sub,content):
@@ -37,7 +37,9 @@ def send_mail(to_list,sub,content):
     msg = MIMEText(content)
     msg['Subject'] = sub
     msg['From'] = me
-    msg['To'] = ";".join(to_list)
+    #msg['To'] = ";".join(to_list)
+    msg['To'] = to_list.strip()
+    print "SENDING EMAIL TO:",msg['To']
     try:
         s = smtplib.SMTP()
         s.connect(mail_host)
@@ -50,9 +52,9 @@ def send_mail(to_list,sub,content):
         return False
 if __name__ == '__main__':
 	try:
-		help_msg ='''Usage: python mailer.py -u "axli@gmail.com jerry@baidu.com"  -c "service down!" '''
+		help_msg ='''Usage: python mailer.py -u "axli@gmail.com;jerry@baidu.com"  -c "service down!" '''
 		if '-u' and '-c' in sys.argv:
-			mailto_list =  sys.argv[sys.argv.index('-u') + 1].split()
+			mailto_list =  sys.argv[sys.argv.index('-u') + 1]
 			mail_content = sys.argv[sys.argv.index('-c') + 1]
 		else:
 			print help_msg
@@ -65,4 +67,4 @@ if __name__ == '__main__':
         	print "Mail sent success!"
     	else:
         	print "Mail sent failed!"
-else:print 'send email++++++++'
+else:pass
