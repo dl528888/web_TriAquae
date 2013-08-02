@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os,sys
-import time,datetime 
+import time,datetime,json
+
 #date = datetime.datetime.now()
 date =time.strftime('%Y_%m_%d %H\:%M\:%S')
 snmp_oid_list = {
@@ -59,6 +60,20 @@ snmp_data = {'Mem_list' : [],'Ip_speed' : []}
 Mem_list = []
 Cpu_usage = []
 
+performance_dic = {}
+
+
+def insert_to_db(IP_ADDR, SNMP_STATUS, SNMP_DATA ):
+	'''db_connector.AlertTemp.objects.create(
+		host = IP_ADDR,
+		snmp_status = SNMP_STATUS,
+		snmp_data = json.dumps(SNMP_DATA),
+		)
+	'''
+	print json.dumps(SNMP_DATA)
+	cmd = '''echo %s '|' %s '|' '%s' >> snmp.log''' %(IP_ADDR, SNMP_STATUS, json.dumps(SNMP_DATA))
+	os.system(cmd)
+	pass
 def test_snmp():
 	if snmp_version == '2c':
 		cmd = "snmpwalk -v %s -c %s %s system" %  (snmp_version, community_name, ip_addr)
@@ -66,7 +81,9 @@ def test_snmp():
 		cmd = "snmpwalk -v %s -u %s -l %s -a %s -A %s %s system" %(snmp_version, snmp_user, snmp_auth, snmp_MD5, snmp_pass, ip_addr)
 	cmd_result = os.system(cmd)
 	if cmd_result != 0:
-		print "Couldn't connect to SNMP,please check the network or snmp configuration!"
+		err_msg = "Could not connect to SNMP,please check the network or snmp configuration!"
+		insert_to_db(ip_addr, 'Timeout', err_msg)
+		print err_msg 
 		sys.exit()
 #Test snmp before run bulk snmp commands
 test_snmp()
@@ -178,6 +195,7 @@ for name,data in  snmp_data.items():
 		cpu_idle = cpu_dic['ssCpuIdle.0']
 		cpu_system = cpu_dic['ssCpuSystem.0']
 		cpu_user = cpu_dic['ssCpuUser.0']
+		performance_dic['CpuIdle'] = cpu_idle
 		print 'CpuUsage:',cpu_idle,cpu_system,cpu_user
 		try:
                         os.lstat(rrdfile)
@@ -194,6 +212,7 @@ for name,data in  snmp_data.items():
 		load_1 = data[0].split()[0]
 		load_5 = data[0].split()[1]
 		load_15 = data[0].split()[2]
+		performance_dic['SystemLoad'] = load_1
 		print 'Load:',load_1, load_5, load_15
 		try:
                         os.lstat(rrdfile)
@@ -219,6 +238,7 @@ for name,data in  snmp_data.items():
 			Buffer_MEM = int(info_dic['memBuffer.0']) /1024
 			MEM_used = Total_RAM - Free_MEM
 			SWAP_used = Total_SWAP - Free_SWAP
+			performance_dic['MemUsage'] = float(Total_RAM - Cached_MEM - Free_MEM) / Total_RAM * 100 
 			#SWAP_used = 520
 			print "Memory:", MEM_used,SWAP_used,Cached_MEM
 			try:
@@ -262,3 +282,5 @@ for name,data in  snmp_data.items():
 	else :
 		pass
 		#print name,data
+
+insert_to_db(ip_addr,'OK', performance_dic)

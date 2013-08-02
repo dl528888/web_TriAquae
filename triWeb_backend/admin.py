@@ -2,7 +2,7 @@
 from django.contrib.auth.admin import UserAdmin
 from django.contrib import admin
 
-from web01.models import IpMachine,IpGroup,AuthMethod,RemoteUser,MultiRunCounter,LogingUser,IDC,OpsLogTemp,OpsLog,ServerStatus
+from web01.models import IpMachine,IpGroup,AuthMethod,RemoteUser,MultiRunCounter,LogingUser,IDC,OpsLogTemp,OpsLog,ServerStatus,AlertTemp
 
 import logging.config, logging, logging.handlers
 logger = logging.getLogger(__name__)
@@ -38,6 +38,10 @@ class StatusAdmin(admin.ModelAdmin):
 	search_fields = ('host','host_status')
 	list_display = ('host','host_status','ping_status','availability','host_uptime','breakdown_count','up_count','attempt_count')
 
+
+class AlertTempAdmin(admin.ModelAdmin):
+	search_fields = ('host','snmp_status')
+	list_display = ('host', 'snmp_data','snmp_status')
 admin.site.register(ServerStatus,StatusAdmin)
 admin.site.register(OpsLogTemp,LogAdmin)
 admin.site.register(OpsLog,OpsLogAdmin)
@@ -49,3 +53,4 @@ admin.site.register(LogingUser,LogingUserAdmin)
 admin.site.register(AuthMethod)
 admin.site.register(RemoteUser,RemoteUserAdmin)
 admin.site.register(IDC)
+admin.site.register(AlertTemp,AlertTempAdmin)

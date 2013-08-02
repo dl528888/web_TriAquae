@@ -31,13 +31,14 @@ if __name__ == "__main__":
 			cmd_result = os.popen('python %s -v %s -u %s -l %s -a %s -A %s -h %s' %(script, snmp_version, snmp_user, security_level, auth_protocol, snmp_pass, host) ) 
 		snmp_result_dic[host] = cmd_result
 	while True:
-
+		os.system('echo > snmp.log')
+		#db_connector.AlertTemp.objects.all().delete()
 		if len(ip_list) < 100:
 			thread_num = len(ip_list)
 		else:
 			thread_num = 100
 		pool = multiprocessing.Pool(processes=thread_num)
-
+		
 		for ip in ip_list:
 			snmp_version = ip.snmp_version
 			comm_name = ip.snmp_community_name

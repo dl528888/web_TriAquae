@@ -20,6 +20,14 @@ class IpMachine(models.Model):
 	snmp_auth_protocol = models.CharField(max_length=50,default='MD5')
 	snmp_user = models.CharField(max_length=50,default='triaquae_snmp')	
 	snmp_pass = models.CharField(max_length=50,default='my_pass')
+	
+	system_load_warning = models.IntegerField(default=0,blank=True,verbose_name="load >")
+	system_load_critical = models.IntegerField(default=0,blank=True)
+	cpu_idle_warning = models.IntegerField(default=0,blank=True, verbose_name = "cpuIdle% < ")
+	cpu_idle_critical= models.IntegerField(default=0,blank=True)
+	mem_usage_warning = models.IntegerField(default=0,blank=True, verbose_name="memoryUsage% >")	
+	mem_usage_critical = models.IntegerField(default=0,blank=True)
+	
 	#for monitor	
 	def __unicode__(self):
 		return self.ip
@@ -35,6 +43,11 @@ class ServerStatus(models.Model):
 	availability = models.CharField(max_length=20,default=0)
 	def __unicode__(self):
                 return self.host
+class AlertTemp(models.Model):
+	host = models.IPAddressField(primary_key=True)
+	snmp_status = models.CharField(max_length=20)
+	snmp_data  = models.CharField(max_length=200)
+
 class IDC(models.Model):
     str_idc = models.CharField(max_length=50,unique=True)
     def __unicode__(self):
